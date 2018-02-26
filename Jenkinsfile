@@ -14,16 +14,6 @@ def currentBranch = env.BRANCH_NAME
 // the checkout directory for the cookbook; usually not changed
 def cookbookDirectory = "cookbooks/ae-windows-base-chef"
 
-// Everything below should not change unless you have a good reason :slightly_smiling_face:
-//def building_pull_request = env.pullRequestId != null
-
-//def notify_stash(building_pull_request){
-  //if(building_pull_request){
-    //step([$class: 'StashNotifier',
-    //  commitSha1: "${env.sourceCommitHash}"])
-  //}
-//}
-
 def execute(command){
   ansiColor('xterm'){
     bat command
@@ -49,7 +39,6 @@ def fetch(scm, cookbookDirectory, currentBranch){
 
 stage('Lint') {
   node('master') {
-    notify_stash(building_pull_request)
 
     echo "cookbook: ${cookbook}"
     echo "current branch: ${currentBranch}"
@@ -78,8 +67,7 @@ stage('Lint') {
     }
     catch(err){
       currentBuild.result = 'FAILED'
-      notify_stash(building_pull_request)
-      throw err
+          throw err
     }
   }
 }
@@ -96,8 +84,7 @@ stage('Unit Test'){
     }
     catch(err){
       currentBuild.result = 'FAILED'
-      notify_stash(building_pull_request)
-      throw err
+          throw err
     }
     finally {
       junit allowEmptyResults: true, testResults: '**/rspec.xml'
@@ -118,7 +105,6 @@ stage('Functional (Kitchen)') {
       currentBuild.result = 'FAILED'
     }
     finally {
-      notify_stash(building_pull_request)
       dir(cookbookDirectory) {
         rake('test:kitchen:destroy')
       }
