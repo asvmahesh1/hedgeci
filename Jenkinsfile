@@ -15,14 +15,14 @@ def currentBranch = env.BRANCH_NAME
 def cookbookDirectory = "cookbooks/ae-windows-base-chef"
 
 // Everything below should not change unless you have a good reason :slightly_smiling_face:
-def building_pull_request = env.pullRequestId != null
+//def building_pull_request = env.pullRequestId != null
 
-def notify_stash(building_pull_request){
-  if(building_pull_request){
-    step([$class: 'StashNotifier',
-      commitSha1: "${env.sourceCommitHash}"])
-  }
-}
+//def notify_stash(building_pull_request){
+  //if(building_pull_request){
+    //step([$class: 'StashNotifier',
+    //  commitSha1: "${env.sourceCommitHash}"])
+  //}
+//}
 
 def execute(command){
   ansiColor('xterm'){
