@@ -1,3 +1,4 @@
+---
 driver:
   name: ec2
   region: us-east-1
@@ -11,35 +12,31 @@ driver:
   associate_public_ip: true
   interface: dns
   retryable_sleep: 10
-  retryable_tries: 120
+  retryable_tries: 60
 
   winrm:
     boot_timeout: 600
     max_tries: 500
-transport:
-  name: winrm
-  elevated: true
-
 provisioner:
   name: chef_zero
   #always_update_cookbooks: true
-  require_chef_omnibus: 13.1
-  wait_for_retry: 120 #
+  require_chef_omnibus: true
+  wait_for_retry: 60 #
   retry_on_exit_code:
-    - 35
+    - [35, 1] #This allows for reboots
 
   max_retries: 100
 
   client_rb:
     exit_status: :enabled # Opt-in to the standardized exit codes
-    #log_level: :debug
-    #log_location: STDOUT
-    #verbose_logging: true
+    client_fork: false  # Forked instances don't return the real exit code
+    log_level: :debug
+    log_location: STDOUT
+    verbose_logging: true
 verifier:
 name: inspec
 
 platforms:
-
   - name: windows-2012r2
     driver:
       image_id: ami-a64855dc
@@ -47,17 +44,15 @@ platforms:
         Name: test-kitchen-2012r2
     transport:
       elevated: true
-      username: aeadmin
-      password: @3@dm1n
-
+      username: kitchen
+      password: k1tch3n
 
 suites:
   - name: default
     run_list:
       - recipe[ae-windows-base::reboot-handler]
       - recipe[ae-windows-base::chocolatey_packages]
-      - recipe[ae-windows-base::set_local_account_token_filter_policy]
-      - recipe[ae-windows-base-sqlserver::deactivate_uac]
+
     attributes:
       ae-windows-base-chef:
         reboot_mode: reboot
