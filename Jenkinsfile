@@ -38,7 +38,7 @@ def fetch(scm, cookbookDirectory, currentBranch){
 }
 
 stage('Lint') {
-  node('master') {
+  steps {
 
     echo "cookbook: ${cookbook}"
     echo "current branch: ${currentBranch}"
@@ -73,7 +73,7 @@ stage('Lint') {
 }
 
 stage('Unit Test'){
-  node('master') {
+  steps {
     try {
       fetch(scm, cookbookDirectory, currentBranch)
       dir(cookbookDirectory) {
@@ -93,7 +93,7 @@ stage('Unit Test'){
 }
 
 stage('Functional (Kitchen)') {
-  node('master') {
+  steps {
     try{
       fetch(scm, cookbookDirectory, currentBranch)
       dir(cookbookDirectory) {
@@ -115,7 +115,7 @@ stage('Functional (Kitchen)') {
 if (currentBranch == stableBranch){
   lock(cookbook){
     stage ('Promote to Supermarket') {
-      node('master'){
+      steps {
         fetch(scm, cookbookDirectory, currentBranch)
         dir(cookbookDirectory) {
           execute "git branch --set-upstream ${currentBranch} origin/${currentBranch}"
