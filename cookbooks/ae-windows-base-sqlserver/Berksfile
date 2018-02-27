@@ -1,9 +1,0 @@
-source 'https://supermarket.chef.io'
-
-
-cookbook 'ae-windows-base', path: '../../cookbooks/ae-windows-base-chef'
-metadata
-
-
-
-#cookbook "ae-windows-base", git: "https://github.com/aenetworks-infra/ae-windows-base-packer.git", rel: "cookbooks/ae-windows-base-chef"

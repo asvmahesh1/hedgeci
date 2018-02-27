@@ -1,5 +1,0 @@
-source 'https://supermarket.chef.io'
-
-metadata
-
-#cookbook 'ae-windows-base', path: '../../cookbooks/ae-windows-base-chef'
