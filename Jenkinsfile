@@ -14,114 +14,47 @@ def currentBranch = env.BRANCH_NAME
 // the checkout directory for the cookbook; usually not changed
 def cookbookDirectory = "cookbooks/ae-windows-base-chef"
 
-def execute(command){
-  ansiColor('xterm'){
-    bat command
-  }
-}
 
-def rake(command) {
-  execute("chef exec rake -t ${command}")
-}
+pipeline {
+  agent any
 
-def fetch(scm, cookbookDirectory, currentBranch){
-  checkout([$class: 'GitSCM',
-    branches: scm.branches,
-    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
-    extensions: scm.extensions + [
-      [$class: 'RelativeTargetDirectory',relativeTargetDir: cookbookDirectory],
-      [$class: 'CleanBeforeCheckout'],
-      [$class: 'LocalBranch', localBranch: currentBranch]
-    ],
-    userRemoteConfigs: scm.userRemoteConfigs
-  ])
-}
-
-stage('Lint') {
-  steps {
-
-    echo "cookbook: ${cookbook}"
-    echo "current branch: ${currentBranch}"
-    echo "checkout directory: ${cookbookDirectory}"
-    try{
-      fetch(scm, cookbookDirectory, currentBranch)
-      dir(cookbookDirectory){
-        // clean out any old artifacts from the cookbook directory including the berksfile.lock file
-        rake('clean')
-      }
-
-     dir(cookbookDirectory) {
-        try {
-          rake('style')
-        }
-        finally {
-          step([$class: 'CheckStylePublisher',
-                canComputeNew: false,
-                defaultEncoding: '',
-                healthy: '',
-                pattern: '**/reports/xml/checkstyle-result.xml',
-                unHealthy: ''])
-        }
-      }
-      currentBuild.result = 'SUCCESS'
-    }
-    catch(err){
-      currentBuild.result = 'FAILED'
-          throw err
-    }
-  }
-}
-
-stage('Unit Test'){
-  steps {
-    try {
-      fetch(scm, cookbookDirectory, currentBranch)
-      dir(cookbookDirectory) {
-        rake('test:berks_install')
-        rake('test:unit')
-        currentBuild.result = 'SUCCESS'
-      }
-    }
-    catch(err){
-      currentBuild.result = 'FAILED'
-          throw err
-    }
-    finally {
-      junit allowEmptyResults: true, testResults: '**/rspec.xml'
-    }
-  }
-}
-
-stage('Functional (Kitchen)') {
-  steps {
-    try{
-      fetch(scm, cookbookDirectory, currentBranch)
-      dir(cookbookDirectory) {
-        rake('test:kitchen:all')
-      }
-      currentBuild.result = 'SUCCESS'
-    }
-    catch(err){
-      currentBuild.result = 'FAILED'
-    }
-    finally {
-      dir(cookbookDirectory) {
-        rake('test:kitchen:destroy')
-      }
-    }
-  }
-}
-
-if (currentBranch == stableBranch){
-  lock(cookbook){
-    stage ('Promote to Supermarket') {
+ stages {
+	stage ('Checkout') {
       steps {
-        fetch(scm, cookbookDirectory, currentBranch)
-        dir(cookbookDirectory) {
-          execute "git branch --set-upstream ${currentBranch} origin/${currentBranch}"
-          rake('release')
+	   
+         echo "git checkout"
+     checkout([$class: 'GitSCM', branches: [[name: '*/${branch}']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9b611df4-f17d-445f-8f2b-d91ae6cb7436', url: 'https://github.com/aenetworks-infra/ae-sqlserver-chef.git']]])
+	    }
+	  }
+    stage('Lint') {
+      steps {
+        parallel (
+          rubocop: {
+            sh 'echo "Starting chefstyle (rubocop): "'
+			dir ('cookbooks/SqlServer/') {
+            //sh '/opt/chefdk/embedded/bin/rubocop --fail-level E'
+			  }
+          },
+          foodcritic: {
+            sh 'echo "Starting foodcritic: "'
+			dir ('cookbooks/SqlServer/') {
+            //sh 'foodcritic . --tags ~FC003'
+			}
+          },
+        )
+
         }
-      }
+		post {
+              always {
+                // use checkstyle plugin to expose rubycop lint checks
+                checkstyle canComputeNew: false, canRunOnFailed: true, defaultEncoding: '', failedTotalAll: '100', healthy: '', pattern: 'int-lint-results.xml', unHealthy: '', unstableTotalAll: '100'
+
+				// use warnings plugin with our custom foodcritic parser to expose chef lint checks		 
+				 warnings canComputeNew: false, canResolveRelativePaths: false, canRunOnFailed: true, categoriesPattern: '', consoleParsers: [[parserName: 'Foodcritic'], [parserName: 'Rubocop']], defaultEncoding: '', excludePattern: '', failedTotalAll: '0', healthy: '', includePattern: '', messagesPattern: '', unHealthy: '', unstableTotalAll: '0'
+
+              }
+            }
+        }
     }
-  }
 }
+
