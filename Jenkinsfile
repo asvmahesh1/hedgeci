@@ -1,19 +1,4 @@
 #!/usr/bin/env groovy
-// COOKBOOK BUILD SETTINGS
-
-// name of this cookbook
-def cookbook = 'ae-window-base'
-
-// SUPERMARKET SETTINGS
-// the branch that should be promoted to supermarket
-def stableBranch = 'master'
-// the current branch that is being built
-def currentBranch = env.BRANCH_NAME
-
-// OTHER (Unchanged)
-// the checkout directory for the cookbook; usually not changed
-def cookbookDirectory = "cookbooks/ae-windows-base-chef"
-
 
 pipeline {
   agent any
@@ -23,7 +8,7 @@ pipeline {
       steps {
 	   
          echo "git checkout"
-     checkout([$class: 'GitSCM', branches: [[name: '*/${branch}']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9b611df4-f17d-445f-8f2b-d91ae6cb7436', url: 'https://github.com/aenetworks-infra/ae-sqlserver-chef.git']]])
+    // checkout([$class: 'GitSCM', branches: [[name: '*/${branch}']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9b611df4-f17d-445f-8f2b-d91ae6cb7436', url: 'https://github.com/aenetworks-infra/ae-sqlserver-chef.git']]])
 	    }
 	  }
     stage('Lint') {
@@ -57,4 +42,3 @@ pipeline {
         }
     }
 }
-
